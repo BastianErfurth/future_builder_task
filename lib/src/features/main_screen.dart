@@ -8,32 +8,58 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  final TextEditingController _zipController = TextEditingController();
+  Future<String>? _cityFuture;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Center(
-          child: Column(
-            spacing: 32,
-            children: [
-              TextFormField(
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: "Postleitzahl",
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Center(
+            child: Column(
+              spacing: 32,
+              children: [
+                TextFormField(
+                  controller: _zipController,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: "Postleitzahl",
+                  ),
                 ),
-              ),
-              OutlinedButton(
-                onPressed: () {
-                  // TODO: implementiere Suche
-                },
-                child: const Text("Suche"),
-              ),
-              Text(
-                "Ergebnis: Noch keine PLZ gesucht",
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-            ],
+                OutlinedButton(
+                  onPressed: () {
+                    setState(() {
+                      _cityFuture = getCityFromZip(_zipController.text);
+                    });
+                  },
+                  child: const Text("Suche"),
+                ),
+                FutureBuilder(
+                  future: _cityFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.done) {
+                      if (snapshot.hasError) {
+                        return Text(
+                          "Fehler: ${snapshot.error.toString()}",
+                        );
+                      } else if (snapshot.hasData) {
+                        return Text(
+                          "Ergebnis: ${snapshot.data}",
+                        );
+                      }
+                    } else if (snapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    }
+                    return Text(
+                      "Ergebnis: Noch keine PLZ gesucht",
+                      style: TextStyle(fontSize: 16),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -42,7 +68,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   void dispose() {
-    // TODO: dispose controllers
+    _zipController.dispose();
     super.dispose();
   }
 
